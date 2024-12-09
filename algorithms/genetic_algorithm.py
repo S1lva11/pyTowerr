@@ -1,4 +1,5 @@
 import settings
+import random
 
 
 class GeneticAlgorithm:
@@ -19,11 +20,19 @@ class GeneticAlgorithm:
         range_min, range_max = settings.TOWER_TYPES[self.tower_type]['range']
         cooldown_min, cooldown_max = settings.TOWER_TYPES[self.tower_type]['cooldown']
         damage_min, damage_max = settings.TOWER_TYPES[self.tower_type]['damage']
+
         first_population = []
+
+        # Inicialização aleatória dos valores de cada gene
+        accuracy = random.uniform(0.1, 1.0) # varia entre 0.01 a 1.0
+        cooldown = random.uniform(cooldown_min, cooldown_max) # varia entre 100 ms a 4000 ms
+        range_value = random.uniform(range_min, range_max) # varia entre 50 a 100 unidades
+        damage = random.uniform(damage_min, damage_max) # varia entre 1 a 3 pontos de dano
 
         # For demonstration purposes, we will initialize the population with the worst possible values
         for i in range(self.population_size):
-            first_population.append([0.01, cooldown_max, range_min, damage_min])
+            first_population.append([accuracy, cooldown, range_value, damage])
+            
         return first_population
 
     def fitness_function(self, individual):
