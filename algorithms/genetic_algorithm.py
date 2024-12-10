@@ -98,7 +98,8 @@ class GeneticAlgorithm:
         :param parent2: Individual 2 to crossover
         :return: list, the genes of the child (individual)
         """
-        crossover_point = random.randint(1, self.num_genes - 1) # probabilidade de crossover
+        crossover_point = random.randint(1, self.num_genes - 1) # método de crossover aleatório
+                                                                # crossover simples, com um único ponto de corte
 
         child = parent1[:crossover_point] + parent2[crossover_point:]
 
