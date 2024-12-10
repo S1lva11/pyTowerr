@@ -18,22 +18,23 @@ class GeneticAlgorithm:
         :return: list of lists, each containing the genes for an individual
         """
         # Get ranges for this tower type from settings
+        accuracy_min, accuracy_max = 0.01, 1.0 # varia entre 0.01 a 1.0
         cooldown_min, cooldown_max = settings.TOWER_TYPES[self.tower_type]['cooldown'] # varia entre 100 ms a 4000 ms
         range_min, range_max = settings.TOWER_TYPES[self.tower_type]['range'] # varia entre 50 a 100 unidades
         damage_min, damage_max = settings.TOWER_TYPES[self.tower_type]['damage'] # varia entre 1 a 3 pontos de dano 
 
         first_population = []
 
-        # Inicialização aleatória dos valores de cada gene
-        accuracy = round(random.uniform(0.1, 1.0),2) # varia entre 0.01 a 1.0 (inclui números decimais)
-        cooldown = random.randint(cooldown_min, cooldown_max) # (inclui números inteiros)
-        range_ = random.randint(range_min, range_max)
-        damage = random.randint(damage_min, damage_max)
-
         for i in range(self.population_size):
+            # Inicialização aleatória dos valores de cada gene
+            accuracy = round(random.uniform( accuracy_min, accuracy_max ),2) # (inclui números decimais)
+            cooldown = random.randint(cooldown_min, cooldown_max) # (inclui números inteiros)
+            range_ = random.randint(range_min, range_max)
+            damage = random.randint(damage_min, damage_max)
+
             first_population.append([accuracy, cooldown, range_, damage])
 
-        print("População iniciada")
+        print("População iniciada: ", first_population)
         return first_population
 
     def fitness_function(self, individual):
@@ -57,40 +58,44 @@ class GeneticAlgorithm:
         normalized_damage = (damage - 1) / 2  # 1-3 → 0-1
 
         # Calcular o fitness ponderado
-        fitness = round((
+        fitness = (
             score_accuracy * normalized_accuracy +
             score_cooldown * normalized_cooldown +
             score_range * normalized_range +
             score_damage * normalized_damage
-        ),2)
+        )
+
+        # Normalizar pelo total dos scores
+        total_score = score_accuracy + score_cooldown + score_range + score_damage
+        fitness /= total_score
         
-        print(fitness)
-        return fitness
+        print(round(fitness,2))
+        return round(fitness,2)
 
     def run_generation(self):
         """
         Run a single generation of the genetic algorithm
         This is where the selection, crossover, and mutation steps are performed
         """
-        # calculate fitness for the current population
+         # Calcular fitness para a população atual
         fitness_scores = [self.fitness_function(ind) for ind in self.population]
         sorted_population = [ind for _, ind in sorted(zip(fitness_scores, self.population), reverse=True)]
         
-        # Selection: Select top individuals for breeding
+        # Selecionar os melhores indivíduos como pais
         num_parents = self.population_size // 2
         parents = sorted_population[:num_parents]
 
-        # Crossover and mutation to create the next generation
+        # Gerar a próxima geração com crossover e mutação
         next_generation = parents.copy()
-
         while len(next_generation) < self.population_size:
             parent1, parent2 = random.sample(parents, 2)
-            child = self.crossover(parent1, parent2)
-            mutated_child = self.mutate(child)
-            next_generation.append(mutated_child)
+            child1, child2 = self.crossover(parent1, parent2)  # Gerar dois filhos
+            next_generation.append(self.mutate(child1))  # Mutar e adicionar o primeiro filho
+            if len(next_generation) < self.population_size:
+                next_generation.append(self.mutate(child2))  # Mutar e adicionar o segundo filho (se necessário)
 
         self.population = next_generation
-        
+
     def crossover(self, parent1, parent2):
         """
         Perform crossover between two parents to produce a child
@@ -98,12 +103,29 @@ class GeneticAlgorithm:
         :param parent2: Individual 2 to crossover
         :return: list, the genes of the child (individual)
         """
-        crossover_point = random.randint(1, self.num_genes - 1) # método de crossover aleatório
-                                                                # crossover simples, com um único ponto de corte
+        # Garantir que temos pelo menos 3 genes para realizar o crossover
+        if len(parent1) < 3 or len(parent2) < 3:
+            raise ValueError("O crossover em 2 pontos requer pelo menos 3 genes.")
 
-        child = parent1[:crossover_point] + parent2[crossover_point:]
+        # Selecionar dois pontos de corte aleatórios
+        point1 = random.randint(1, self.num_genes - 2)  # Ponto de corte 1
+        point2 = random.randint(point1 + 1, self.num_genes - 1)  # Ponto de corte 2
 
-        return child
+        # Criar o primeiro filho misturando genes dos pais
+        child1 = (
+            parent1[:point1] +        # Segmento 1 do Pai 1
+            parent2[point1:point2] +  # Segmento 2 do Pai 2
+            parent1[point2:]          # Segmento 3 do Pai 1
+        )
+
+        # Criar o segundo filho invertendo os segmentos
+        child2 = (
+            parent2[:point1] +        # Segmento 1 do Pai 2
+            parent1[point1:point2] +  # Segmento 2 do Pai 1
+            parent2[point2:]          # Segmento 3 do Pai 2
+        )
+
+        return child1, child2
     
     def mutate(self, individual):
         """
