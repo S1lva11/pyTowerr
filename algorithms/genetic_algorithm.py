@@ -1,3 +1,4 @@
+import time
 import settings
 import random
 
@@ -5,9 +6,10 @@ import random
 
 class GeneticAlgorithm:
     def __init__(self, tower_type):
-        self.num_generations = 5
+        self.num_generations = 40
+        self.fitness_threshold = 0.9
         self.num_genes = 4  # accuracy, cooldown, range, firepower
-        self.population_size = 10 # número de torres
+        self.population_size = 20 # número de torres
         self.tower_type = tower_type
         self.population = self.initialize_population()
         self.current_generation = 0
@@ -88,6 +90,7 @@ class GeneticAlgorithm:
         parents = sorted_population[:num_parents]
 
         next_generation = parents.copy() # Iniciar a próxima geração com os pais
+        
         # Gerar a próxima geração com crossover e mutação para cada indivíduo
         while len(next_generation) < self.population_size:
             parent1, parent2 = random.sample(parents, 2) # Selecionar dois pais aleatórios
@@ -132,7 +135,7 @@ class GeneticAlgorithm:
         :param individual: list, the genes of the individual to mutate
         :return: list, the genes of the mutated individual
         """
-        mutation_rate = 0.1  # 10% probabilidade de mutação
+        mutation_rate = 0.25  # 25% probabilidade de mutação
         chance = random.random()
 
         # mutação uniforme
@@ -183,11 +186,61 @@ class GeneticAlgorithm:
         """
         return self.current_generation
 
+    # def run(self):
+    #     """
+    #     Run the genetic algorithm for the specified number of generations.
+    #     It uses the run_generation method to perform the steps for each generation
+    #     """
+    #     for i in range(self.num_generations):
+    #         self.current_generation = i + 1
+    #         self.run_generation()
+
+    # def run(self):
+    #     """
+    #     Run the genetic algorithm for the specified number of generations.
+    #     Stops if the average fitness score of the population >= 0.85, or runs up to the max number of generations.
+    #     """
+    #     target_fitness = 0.85  # Define o objetivo para a média do fitness
+    #     for i in range(self.num_generations):
+    #         self.current_generation = i + 1
+    #         self.run_generation()
+
+    #         # Calcular a média do fitness da população atual
+    #         fitness_scores = [self.fitness_function(ind) for ind in self.population]
+    #         average_fitness = sum(fitness_scores) / len(fitness_scores)
+
+    #         print(f"Geração {self.current_generation}, Média de Fitness: {average_fitness:.4f}")
+
+    #         # Parar se a média do fitness atingir ou exceder o objetivo
+    #         if average_fitness >= target_fitness:
+    #             print(f"Objetivo de média de fitness alcançado na geração {self.current_generation}!")
+    #             break
+
     def run(self):
         """
         Run the genetic algorithm for the specified number of generations.
-        It uses the run_generation method to perform the steps for each generation
+        Stops if the average fitness score of the population >= 0.9 (until fitness threshold is reached), or the max number of generations is completed.
         """
-        for i in range(self.num_generations):
-            self.current_generation = i + 1
+        start_time = time.time()
+        
+        while self.current_generation < self.num_generations:
+            self.current_generation += 1
             self.run_generation()
+            
+            # Calcular a média do fitness score para a população atual
+            fitness_scores = (self.fitness_function(ind) for ind in self.population)
+            avg_fitness = sum(fitness_scores) / len(self.population)
+
+            print(f"Geração {self.current_generation}, Média de Fitness: {avg_fitness:.4f}")
+            
+            # Parar se a média do fitness score atingir ou exceder o objetivo
+            if avg_fitness >= self.fitness_threshold:
+                print(f"Objetivo de média de fitness alcançado na geração {self.current_generation}!")
+                break
+        
+        end_time = time.time()
+        delta_time = end_time - start_time
+        
+        print(f"Duração {delta_time} segundos para gerar {self.current_generation} gerações.")
+
+
